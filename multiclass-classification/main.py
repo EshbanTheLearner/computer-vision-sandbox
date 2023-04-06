@@ -21,29 +21,28 @@ import os
 import collections
 import copy
 
+import data as d
+
 path2data = "./data"
 
-if not os.path.exists(path2data):
-    os.mkdir(path2data)
+train_ds, test_ds = d.download_data(path2data)
+# print(test_ds.data.shape)
 
-data_transformer = transforms.Compose([
-    transforms.ToTensor()
-])
-
-train_ds = datasets.STL10(
-    path2data, split="train", 
-    download=True, transform=data_transformer
-)
-
-test0_ds = datasets.STL10(
-    path2data, split="test",
-    download=True, transform=data_transformer
-)
+val_ds, test_ds = d.validation_test_split(test_ds)
 
 print(train_ds.data.shape)
-print(test0_ds.data.shape)
+print(val_ds.data.shape)
+print(test_ds.data.shape)
+
 
 y_train = [y for _, y in train_ds]
+y_val = [y for _, y in val_ds]
+y_test = [y for _, y in test_ds]
+
 counter_train = collections.Counter(y_train)
+counter_val = collections.Counter(y_val)
+counter_test = collections.Counter(y_test)
 
 print(counter_train)
+print(counter_val)
+print(counter_test)
