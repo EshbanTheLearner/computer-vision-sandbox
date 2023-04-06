@@ -1,8 +1,11 @@
 from torchvision import datasets
 from torchvision import transforms
 from torchvision import utils
+
 from torch.utils.data import Subset
+
 from sklearn.model_selection import StratifiedShuffleSplit
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -39,7 +42,7 @@ def validation_test_split(test_set):
 
     return val, test
 
-def show(img, y=None, color=True):
+def show(img, y=None):
     np_img = img.numpy()
     np_img_tr = np.transpose(np_img, (1, 2, 0))
     plt.imshow(np_img_tr)
