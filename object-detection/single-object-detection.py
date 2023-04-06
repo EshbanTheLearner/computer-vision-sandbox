@@ -35,4 +35,15 @@ train_ds = datasets.STL10(
     download=True, transform=data_transformer
 )
 
+test0_ds = datasets.STL10(
+    path2data, split="test",
+    download=True, transform=data_transformer
+)
+
 print(train_ds.data.shape)
+print(test0_ds.data.shape)
+
+y_train = [y for _, y in train_ds]
+counter_train = collections.Counter(y_train)
+
+print(counter_train)
