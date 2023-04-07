@@ -141,10 +141,35 @@ def get_req_anchors(anc_boxes_all, gt_bboxes_all, gt_classes_all, pos_thresh=0.7
     return positive_anc_ind, negative_anc_ind, GT_conf_scores, GT_offsets, GT_class_pos, positive_anc_coords, negative_anc_coords, positive_anc_ind_sep
 
 def display_img(img_data, fig, axes):
-    pass
+    for i, img in enumerate(img_data):
+        if type(img) == torch.Tensor:
+            img = img.permute(1, 2, 0).numpy()
+        axes[i].imshow(img)
+    return fig, axes
 
 def display_bbox(bboxes, fig, ax, classes=None, in_format="xyxy", color="y", line_width=3):
-    pass
+    if type(bboxes) == np.ndarray:
+        bboxes = torch.from_numpy(bboxes)
+    if classes:
+        assert len(bboxes) == len(classes)
+    bboxes = ops.box_convert(bboxes, in_fmt=in_format, out_fmt="xywh")
+    c = 0
+    for box in bboxes:
+        x, y, w, h = box.numpy()
+        rect = patches.Rectangle((x, y), w, h, linewidth=line_width, edgecolor=color, facecolor="none")
+        ax.add_patch(rect)
+        if classes:
+            if classes[c] == "pad":
+                continue
+            ax.text(x + 5, y + 20, classes[c], bbox=dict(facecolor="yellow", alpha=0.5))
+        c += 1
+    return fig, ax
 
 def display_grid(x_points, y_points, fig, ax, special_point=None):
-    pass
+    for x in x_points:
+        for y in y_points:
+            ax.scatter(x, y, color="w", marker="+")
+    if special_point:
+        x, y = special_point
+        ax.scatter(x, y, color="red", marker="+")
+    return fig, ax
