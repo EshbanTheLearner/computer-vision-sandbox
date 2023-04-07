@@ -54,8 +54,20 @@ def gen_anc_centers(out_size):
     anc_pts_y = torch.arange(0, out_h) + 0.5
     return anc_pts_x, anc_pts_y
 
-def project_bboxes(bboxes, width_scale_factor, height_scale_factor, model="a2p"):
-    pass
+def project_bboxes(bboxes, width_scale_factor, height_scale_factor, mode="a2p"):
+    assert mode in ["a2p", "p2a"]
+    batch_size = bboxes.size(dim=0)
+    proj_bboxes = bboxes.clone().reshape(batch_size, -1, 4)
+    invalid_bbox_mask = (proj_bboxes == -1)
+    if mode == "a2p":
+        proj_bboxes[:, :, [0, 2]] *= width_scale_factor
+        proj_bboxes[:, :, [1, 3]] *= height_scale_factor
+    else:
+        proj_bboxes[:, :, [0, 2]] /= width_scale_factor
+        proj_bboxes[:, :, [1, 3]] /= height_scale_factor
+    proj_bboxes.masked_fill_(invalid_bbox_mask, -1)
+    proj_bboxes.resize_as_(bboxes)
+    return proj_bboxes
 
 def generate_proposals(anchors, offsets):
     pass
