@@ -110,7 +110,35 @@ def get_iou_mat(batch_size, anc_boxes_all, gt_bboxes_all):
     return ious_mat
 
 def get_req_anchors(anc_boxes_all, gt_bboxes_all, gt_classes_all, pos_thresh=0.7, neg_thresh=0.2):
-    pass
+    B, w_amap, h_amap, A, _ = anc_boxes_all.shape
+    N = gt_bboxes_all.shape[1]
+    tot_anc_boxes = A * w_amap * h_amap
+    iou_mat = get_iou_mat(B, anc_boxes_all, gt_bboxes_all)
+    max_iou_per_gt_box, _ = iou_mat.max(dim=1, keepdim=True)
+    positive_anc_mask = torch.logical_and(iou_mat == max_iou_per_gt_box, max_iou_per_gt_box > 0)
+    positive_anc_mask = torch.logical_or(positive_anc_mask, iou_mat > pos_thresh)
+    positive_anc_ind_sep = torch.where(positive_anc_mask)[0]
+    positive_anc_mask = positive_anc_mask.flatten(start_dim=0, end_dim=1)
+    positive_anc_ind = torch.where(positive_anc_mask)[0]
+    max_iou_per_anc, max_iou_per_anc_ind = iou_mat.max(dim=-1)
+    max_iou_per_anc = max_iou_per_anc.flatten(start_dim=0, end_dim=1)
+    GT_conf_scores = max_iou_per_anc[positive_anc_ind]
+    gt_classes_expand = gt_classes_all.view(B, 1, N).expand(B, tot_anc_boxes, N)
+    GT_class = torch.gather(gt_classes_expand, -1, max_iou_per_anc.unsqueeze(-1)).squeeze(-1)
+    GT_class = GT_class.flatten(start_dim=0, end_dim=1)
+    GT_class_pos = GT_class[positive_anc_ind]
+    gt_bboxes_expand = gt_bboxes_all.view(B, 1, N, 4).expand(B, tot_anc_boxes, N, 4)
+    GT_bboxes = torch.gather(gt_bboxes_expand, -2, max_iou_per_anc_ind.reshape(B, tot_anc_boxes, 1, 1).repeat(1, 1, 1, 4))
+    GT_bboxes = GT_bboxes.flatten(start_dim=0, end_dim=2)
+    GT_bboxes_pos = GT_bboxes[positive_anc_ind]
+    anc_boxes_flat = anc_boxes_all.flatten(start_dim=0, end_dim=-2)
+    positive_anc_coords = anc_boxes_flat[positive_anc_ind]
+    GT_offsets = calc_gt_offsets(positive_anc_coords, GT_bboxes_pos)
+    negative_anc_mask = (max_iou_per_anc < neg_thresh)
+    negative_anc_ind = torch.where(negative_anc_mask)[0]
+    negative_anc_ind = negative_anc_ind[torch.randint(0, negative_anc_ind.shape[0], (positive_anc_ind.shape[0],))]
+    negative_anc_coords = anc_boxes_flat[negative_anc_ind]
+    return positive_anc_ind, negative_anc_ind, GT_conf_scores, GT_offsets, GT_class_pos, positive_anc_coords, negative_anc_coords, positive_anc_ind_sep
 
 def display_img(img_data, fig, axes):
     pass
