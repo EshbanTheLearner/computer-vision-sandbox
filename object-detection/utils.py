@@ -49,7 +49,10 @@ def calc_gt_offsets(pos_anc_coords, gt_bbox_mapping):
     return torch.stack([tx_, ty_, tw_, th_], dim=-1)
 
 def gen_anc_centers(out_size):
-    pass
+    out_h, out_w = out_size
+    anc_pts_x = torch.arange(0, out_w) + 0.5
+    anc_pts_y = torch.arange(0, out_h) + 0.5
+    return anc_pts_x, anc_pts_y
 
 def project_bboxes(bboxes, width_scale_factor, height_scale_factor, model="a2p"):
     pass
