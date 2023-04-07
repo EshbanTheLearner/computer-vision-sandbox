@@ -80,7 +80,24 @@ def generate_proposals(anchors, offsets):
     return proposals
 
 def gen_anc_base(anc_pts_x, anc_pts_y, anc_scales, anc_ratios, out_size):
-    pass
+    n_anc_boxes = len(anc_scales) * len(anc_ratios)
+    anc_base = torch.zeros(1, anc_pts_x.size(dim=0), anc_pts_y.size(dim=0), n_anc_boxes, 4)
+    for ix, xc in enumerate(anc_pts_x):
+        for jx, yc in enumerate(anc_pts_y):
+            anc_boxes = torch.zeros((n_anc_boxes, 4))
+            c = 0
+            for i, scale in enumerate(anc_scales):
+                for j, ratio in enumerate(anc_ratios):
+                    w = scale * ratio
+                    h = scale
+                    xmin = xc - w / 2
+                    ymin = yc - h / 2
+                    xmax = xc + w / 2
+                    ymax = yc + h / 2
+                    anc_boxes[c, :] = torch.Tensor([xmin, ymin, xmax, ymax])
+                    c += 1
+            anc_base[:, ix, jx, :] = ops.clip_boxes_to_images(anc_boxes, size=out_size)
+    return anc_base
 
 def get_iou_mat(batch_size, anc_boxes_all, gt_bboxes_all):
     pass
