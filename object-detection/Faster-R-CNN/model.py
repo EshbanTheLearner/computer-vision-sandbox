@@ -121,7 +121,20 @@ class ClassificationModule(nn.Module):
         self.cls_head = nn.Linear(hidden_dim, n_classes)
 
     def forward(self, feature_map, proposals_list, gt_classes=None):
-        pass
+        if gt_classes is None:
+            mode = "eval"
+        else:
+            mode = "train"
+        roi_out = ops.roi_pool(feature_map, proposals_list, self.roi_size)
+        roi_out = self.avg_pool(roi_out)
+        roi_out = roi_out.squeeze(-1).squeeze(-1)
+        out = self.fc(roi_out)
+        out = F.relu(self.dropout(out))
+        cls_scores = self.cls_head(out)
+        if mode == "eval":
+            return cls_scores
+        cls_scores = self.cls_head(out)
+        return cls_scores
 
 class TwoStageDetector(nn.Module):
     def __init__(self, img_size, out_size, out_channels, n_classes, roi_size):
@@ -130,13 +143,40 @@ class TwoStageDetector(nn.Module):
         self.classifier = ClassificationModule(out_channels, n_classes, roi_size)
 
     def forward(self, images, gt_bboxes, gt_classes):
-        pass
+        total_rpn_loss, feature_map, proposals, positive_anc_ind_sep, GT_class_pos = self.rpn(images, gt_bboxes, gt_classes)
+        pos_proposals_list = []
+        batch_size = images.size(dim=0)
+        for idx in range(batch_size):
+            proposal_idxs = torch.where(positive_anc_ind_sep == idx)[0]
+            proposals_sep = proposals[proposal_idxs].detach().clone()
+            pos_proposals_list.append(proposals_sep)
+        cls_loss = self.classifier(feature_map, pos_proposals_list, GT_class_pos)
+        total_loss = cls_loss + total_rpn_loss
+        return total_loss
 
     def inference(self, images, conf_thresh=0.5, nms_thresh=0.7):
-        pass
+        batch_size = images.size(dim=0)
+        proposals_final, conf_scores_final, feature_map = self.rpn.inference(images, conf_thresh, nms_thresh)
+        cls_scores = self.classifier(feature_map, proposals_final)
+        cls_probs = F.softmax(cls_scores, dim=-1)
+        classes_all = torch.argmax(cls_probs, dim=-1)
+        classes_final = []
+        c = 0
+        for i in range(batch_size):
+            n_proposals = len(proposals_final[i])
+            classes_final.append(classes_all[c: c+n_proposals])
+            c += n_proposals
+        return proposals_final, conf_scores_final, classes_final
 
 def calc_cls_loss(conf_scores_pos, conf_scores_neg, batch_size):
-    pass
+    target_pos = torch.ones_like(conf_scores_pos)
+    target_neg = torch.zeros_like(conf_scores_neg)
+    target = torch.cat((target_pos, target_neg))
+    inputs = torch.cat((conf_scores_pos, conf_scores_neg))
+    loss = F.binary_cross_entropy_with_logits(inputs, target, reduction="sum") * 1. / batch_size
+    return loss
 
 def calc_bbox_reg_loss(gt_offsets, reg_offsets_pos, batch_size):
-    pass
+    assert gt_offsets.size() == reg_offsets_pos.size()
+    loss = F.smooth_l1_loss(reg_offsets_pos, gt_offsets, reduction="sum") * 1. / batch_size
+    return loss
