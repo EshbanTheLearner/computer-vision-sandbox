@@ -11,7 +11,31 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 def parse_annotation(annotation_path, image_dir, img_size):
-    pass
+    img_h, img_w = img_size
+    with open(annotation_path, "r") as f:
+        tree = ET.parse(f)
+    root = tree.getroot()
+    img_paths, gt_boxes_all, gt_classes_all = [], [], []
+    for object_ in root.findall("image"):
+        img_path = os.path.join(image_dir, object_.get("name"))
+        img_paths.append(img_path)
+        orig_w = int(object_.get("width"))
+        orig_h = int(object_.get("height"))
+        groundtruth_boxes, groundtruth_classes = [], []
+        for box_ in object_.findall("box"):
+            xmin = float(box_.get("xtl"))
+            ymin = float(box_.get("ytl"))
+            xmax = float(box_.get("xbr"))
+            ymax = float(box_.get("ybr"))
+            bbox = torch.Tensor([xmin, ymin, xmax, ymax])
+            bbox[[0, 2]] = bbox[[0, 2]] * img_w/orig_w
+            bbox[[1, 3]] = bbox[[1, 3]] * img_h/orig_h
+            groundtruth_boxes.append(bbox.tolist())
+            label = box_.get("label")
+            groundtruth_classes.append(label)
+        gt_boxes_all.append(torch.Tensor(groundtruth_boxes))
+        gt_classes_all.append(groundtruth_classes)
+    return gt_boxes_all, gt_classes_all, img_paths
 
 def calc_gt_offsets(pos_anc_coords, ggt_bbox_mapping):
     pass
