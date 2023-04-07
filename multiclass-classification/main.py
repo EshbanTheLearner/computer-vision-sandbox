@@ -5,6 +5,7 @@ from torch import optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from torchvision import models
+from torchvision import transforms
 
 from torchsummary import summary
 
@@ -37,3 +38,26 @@ counter_test = collections.Counter(y_test)
 print(counter_train)
 print(counter_val)
 print(counter_test)
+
+meanR, meanG, meanB = d.get_mean_RGB(train_ds)
+stdR, stdG, stdB = d.get_std_RGB(train_ds)
+
+train_transformer = transforms.Compose([
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomVerticalFlip(p=0.5),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        [meanR, meanG, meanB],
+        [stdR, stdG, stdB]
+    )
+])
+
+test_transformer = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(
+        [meanR, meanG, meanB],
+        [stdR, stdG, stdB]
+    )
+])
+
+train_ds.transforms = train_transformer
