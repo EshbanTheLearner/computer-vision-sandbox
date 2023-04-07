@@ -70,7 +70,14 @@ def project_bboxes(bboxes, width_scale_factor, height_scale_factor, mode="a2p"):
     return proj_bboxes
 
 def generate_proposals(anchors, offsets):
-    pass
+    anchors = ops.box_convert(anchors, in_fmt="xyxy", out_fmt="cxcywh")
+    proposals_ = torch.zeros_like(anchors)
+    proposals_[:, 0] = anchors[:, 0] + offsets[:, 0] * anchors[:, 2]
+    proposals_[:, 1] = anchors[:, 1] + offsets[:, 1] * anchors[:, 3]
+    proposals_[:, 2] = anchors[:, 2] * torch.exp(offsets[:, 2])
+    proposals_[:, 3] = anchors[:, 3] * torch.exp(offsets[:, 3])
+    proposals = ops.box_convert(proposals_, in_fmt="cxcywh", out_fmt="xyxy")
+    return proposals
 
 def gen_anc_base(anc_pts_x, anc_pts_y, anc_scales, anc_ratios, out_size):
     pass
