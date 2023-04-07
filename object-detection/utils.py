@@ -100,7 +100,14 @@ def gen_anc_base(anc_pts_x, anc_pts_y, anc_scales, anc_ratios, out_size):
     return anc_base
 
 def get_iou_mat(batch_size, anc_boxes_all, gt_bboxes_all):
-    pass
+    anc_boxes_flat = anc_boxes_all.reshape(batch_size, -1, 4)
+    tot_anc_boxes = anc_boxes_flat.size(dim=1)
+    ious_mat = torch.zeros((batch_size, tot_anc_boxes, gt_bboxes_all.size(dim=1)))
+    for i in range(batch_size):
+        gt_bboxes = gt_bboxes_all[i]
+        anc_boxes = anc_boxes_flat[i]
+        ious_mat[i, :] = ops.box_iou(anc_boxes, gt_bboxes)
+    return ious_mat
 
 def get_req_anchors(anc_boxes_all, gt_bboxes_all, gt_classes_all, pos_thresh=0.7, neg_thresh=0.2):
     pass
