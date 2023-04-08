@@ -54,4 +54,15 @@ def load_class_names(file_name):
     return class_names
 
 def non_max_suppression(inputs, model_size, max_output_size, max_output_size_per_class, iou_threshold, confidence_threshold):
-    pass
+    bbox, confs, class_probs = tf.split(inputs, [4, 1, -1], axis=-1)
+    bbox = bbox / model_size[0]
+    scores = confs * class_probs
+    boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
+        boxes = tf.reshape(bbox, (tf.shape(bbox)[0], -1, 1, 4)),
+        scores = tf.reshape(scores, (tf.shape(scores)[0], -1, tf.shape(scores)[-1])),
+        max_output_size_per_class = max_output_size_per_class,
+        max_total_size = max_output_size,
+        iou_threshold = iou_threshold,
+        score_threshold = confidence_threshold 
+    )
+    return boxes, scores, classes, valid_detections
