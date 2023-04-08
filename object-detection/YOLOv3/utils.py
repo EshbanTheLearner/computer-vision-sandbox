@@ -4,7 +4,8 @@ import cv2
 import time
 
 def resize_image(inputs, model_size):
-    pass
+    inputs = tf.image.resize(inputs, model_size)
+    return inputs
 
 def output_boxes(inputs, model_size, max_output_size, max_output_size_per_class, iou_threshold, confidence_threshold):
     pass
