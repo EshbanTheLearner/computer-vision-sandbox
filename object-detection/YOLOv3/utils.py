@@ -49,7 +49,9 @@ def draw_outputs(img, boxes, objectness, classes, nums, class_names):
         return img
 
 def load_class_names(file_name):
-    pass
+    with open(file_name, "r") as f:
+        class_names = f.read().splitlines()
+    return class_names
 
 def non_max_suppression(inputs, model_size, max_output_size, max_output_size_per_class, iou_threshold, confidence_threshold):
     pass
