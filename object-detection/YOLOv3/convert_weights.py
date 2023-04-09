@@ -33,7 +33,19 @@ def load_weights(model, cfg_file, weight_file):
     fp.close()
 
 def main():
-    pass
+    weight_file = "weights/yolov3.weights"
+    cfg_file = "cfg/yolov3.cfg"
+
+    model_size = (416, 416, 3)
+    num_classes = 80
+
+    model = YOLOv3Net(cfg_file, model_size, num_classes)
+    load_weights(model, cfg_file, weight_file)
+
+    try:
+        model.save_weights("weights/yolov3_weights.tf")
+    except IOError:
+        print("Couldn't write the file")
 
 if __name__ == "__main__":
     main()
