@@ -8,4 +8,4 @@ Repository to track my progress in learning computer vision.
 - [ x ] Semantic Segmentation
 - [ x ] Object Detection
 - [ x ] Object Tracking
-- [ ] Image Enhancement
+- [ x ] Image Enhancement
