@@ -7,5 +7,5 @@ Repository to track my progress in learning computer vision.
 - [x] Instance Segmentation
 - [x] Semantic Segmentation
 - [x] Object Detection
-- [ x ] Object Tracking
-- [ x ] Image Enhancement
+- [x] Object Tracking
+- [x] Image Enhancement
